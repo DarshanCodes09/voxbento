@@ -379,6 +379,20 @@ class TestRoomCRUD:
         assert resp.status_code == 200
         assert b"No rooms match search" in resp.content
 
+        # Searching for literal "%" when no room names contain "%" should return empty match, not all rooms
+        async with _client() as c:
+            resp = await c.get(f"/admin/events/{event.id}/rooms/?search=%25", cookies=admin_cookie)
+        assert resp.status_code == 200
+        assert b"No rooms match search" in resp.content
+
+        # Whitespace-only search query should be ignored and render all rooms without active search state
+        async with _client() as c:
+            resp = await c.get(f"/admin/events/{event.id}/rooms/?search=%20%20", cookies=admin_cookie)
+        assert resp.status_code == 200
+        assert b">Main Hall</a>" in resp.content
+        assert b">Workshop Room</a>" in resp.content
+        assert b"No rooms match search" not in resp.content
+
     @pytest.mark.anyio
     async def test_create_room(self, admin_cookie, seed_event):
         event, _, _ = seed_event
