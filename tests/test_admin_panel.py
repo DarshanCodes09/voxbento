@@ -355,6 +355,31 @@ class TestRoomCRUD:
         assert b"Main Hall" in resp.content
 
     @pytest.mark.anyio
+    async def test_room_list_search(self, admin_cookie, seed_event):
+        event, room, _ = seed_event
+        # Create an additional room to test search filtering
+        async with _client() as c:
+            await c.post(
+                f"/admin/events/{event.id}/rooms/",
+                data={"display_name": "Workshop Room"},
+                cookies=admin_cookie,
+                follow_redirects=False,
+            )
+
+        # Search for "Workshop" -> should return "Workshop Room" link and hide "Main Hall" link
+        async with _client() as c:
+            resp = await c.get(f"/admin/events/{event.id}/rooms/?search=Workshop", cookies=admin_cookie)
+        assert resp.status_code == 200
+        assert b">Workshop Room</a>" in resp.content
+        assert b">Main Hall</a>" not in resp.content
+
+        # Search for non-existent room -> empty state message
+        async with _client() as c:
+            resp = await c.get(f"/admin/events/{event.id}/rooms/?search=NonExistent", cookies=admin_cookie)
+        assert resp.status_code == 200
+        assert b"No rooms match search" in resp.content
+
+    @pytest.mark.anyio
     async def test_create_room(self, admin_cookie, seed_event):
         event, _, _ = seed_event
         async with _client() as c:

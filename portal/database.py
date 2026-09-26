@@ -240,20 +240,20 @@ async def list_rooms_for_event(
     session: AsyncSession,
     event_id: int,
     *,
+    search: str | None = None,
     limit: int = 100,
     offset: int = 0,
 ) -> list[Room]:
     from sqlalchemy.orm import selectinload
 
-    result = await session.execute(
-        select(Room)
-        .options(selectinload(Room.translation_languages))
-        .where(Room.event_id == event_id)
-        .order_by(Room.created_at)
-        .limit(limit)
-        .offset(offset),
-    )
+    query = select(Room).options(selectinload(Room.translation_languages)).where(Room.event_id == event_id)
+    if search and search.strip():
+        query = query.where(Room.display_name.ilike(f"%{search.strip()}%"))
+    query = query.order_by(Room.created_at).limit(limit).offset(offset)
+
+    result = await session.execute(query)
     return list(result.scalars().all())
+
 
 
 async def delete_room(session: AsyncSession, room_id: int) -> bool:
