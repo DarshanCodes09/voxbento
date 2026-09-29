@@ -365,7 +365,7 @@ class TestRoomCRUD:
 
     @pytest.mark.anyio
     async def test_room_list_search(self, admin_cookie, seed_event):
-        event, room, _ = seed_event
+        event, _, _ = seed_event
         # Create an additional room to test search filtering
         async with _client() as c:
             await c.post(
@@ -377,7 +377,7 @@ class TestRoomCRUD:
 
         # Search for "Workshop" -> should return "Workshop Room" link and hide "Main Hall" link
         async with _client() as c:
-            resp = await c.get(f"/admin/events/{event.id}/rooms/?search=Workshop", cookies=admin_cookie)
+            resp = await c.get(f"/admin/events/{event.id}/rooms/?search=workshop", cookies=admin_cookie)
         assert resp.status_code == 200
         assert b">Workshop Room</a>" in resp.content
         assert b">Main Hall</a>" not in resp.content
@@ -388,9 +388,14 @@ class TestRoomCRUD:
         assert resp.status_code == 200
         assert b"No rooms match search" in resp.content
 
-        # Searching for literal "%" when no room names contain "%" should return empty match, not all rooms
+        # Searching for literal "%" or "_" when no room names contain them should return empty match, not all rooms
         async with _client() as c:
             resp = await c.get(f"/admin/events/{event.id}/rooms/?search=%25", cookies=admin_cookie)
+        assert resp.status_code == 200
+        assert b"No rooms match search" in resp.content
+
+        async with _client() as c:
+            resp = await c.get(f"/admin/events/{event.id}/rooms/?search=_", cookies=admin_cookie)
         assert resp.status_code == 200
         assert b"No rooms match search" in resp.content
 

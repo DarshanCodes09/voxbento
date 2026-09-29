@@ -29,7 +29,7 @@
 
 <div class="search-bar">
   <form method="get" action="/admin/events/{{ event.id }}/rooms/" class="search-form">
-    <input type="text" name="search" value="{{ search or '' }}" placeholder="Search rooms by name..." class="search-input">
+    <input type="text" name="search" value="{{ search or '' }}" placeholder="Search rooms by name..." aria-label="Search rooms by name" class="search-input">
     <button type="submit" class="btn btn-primary">Search</button>
     {% if search %}
       <a href="/admin/events/{{ event.id }}/rooms/" class="btn">Clear</a>
@@ -66,7 +66,7 @@
   </tbody>
 </table>
 {% else %}
-<div class="empty-state">
+<div class="empty-state" role="status" aria-live="polite">
   <div class="empty-state-icon empty-state-icon--sm">🏛️</div>
   {% if search %}
     <p>No rooms match search "{{ search }}". <a href="/admin/events/{{ event.id }}/rooms/">Clear search</a></p>
