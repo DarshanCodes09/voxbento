@@ -399,6 +399,21 @@ class TestRoomCRUD:
         assert resp.status_code == 200
         assert b"No rooms match search" in resp.content
 
+        # Create a room with display_name containing a literal backslash
+        async with _client() as c:
+            await c.post(
+                f"/admin/events/{event.id}/rooms/",
+                data={"display_name": "Backslash \\ Room"},
+                cookies=admin_cookie,
+                follow_redirects=False,
+            )
+
+        # Search using the URL-encoded backslash
+        async with _client() as c:
+            resp = await c.get(f"/admin/events/{event.id}/rooms/?search=%5C", cookies=admin_cookie)
+        assert resp.status_code == 200
+        assert b">Backslash \\ Room</a>" in resp.content
+
         # Whitespace-only search query should be ignored and render all rooms without active search state
         async with _client() as c:
             resp = await c.get(f"/admin/events/{event.id}/rooms/?search=%20%20", cookies=admin_cookie)
